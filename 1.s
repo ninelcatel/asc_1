@@ -3,6 +3,7 @@
 #gcc -m32 1.s -o 1 -no-pie 
 #^ compilare
 .data
+    contor: .long 0
     blocuri: .space 1024  
     printFormat: .asciz "%d: (%d, %d)\n"
     printFormat_get: .asciz "(%d, %d)\n"
@@ -14,6 +15,7 @@
     idFisier: .space 4
     opInvalid: .asciz "Operatie invalida, restartati programul\n"
     printFormat_invalid: .asciz "%s"
+    
 .text
 .global main
 main:
@@ -28,6 +30,7 @@ main:
       
     xor %ecx,%ecx
         loop_main:
+            mov contor,%ecx
             cmp nrOperatii,%ecx
             jge exit
             push %ecx #tinem minte indexul in stiva
@@ -57,8 +60,11 @@ main:
 
             back:
                 pop %ecx #recuperam registru ecx
-                inc %ecx
+                mov contor,%ecx
+            inc %ecx
+            mov %ecx,contor         #idfk , nu merge fara var contor
 
+               
             jmp loop_main
     jmp exit
 _add:
@@ -102,7 +108,7 @@ _add:
                 div %ebx
                 
                 # eax acum are nr de blocuri pt care trb sa adaug id respectiv
-                mov 8(%esp),%ecx
+                mov 8(%esp),%ecx #in acest punct al stivei se afla lungimea completa a arrayului
                 add %eax,%ecx #salvam ultimul index unde se va afla blocul 
                 mov %ecx,8(%esp)
 
@@ -147,7 +153,11 @@ afisare_add:
     push $printFormat_get
     call printf 
     add $12,%esp
-    jmp exit
+    jmp back
+    # de ce baza stivei este resetata la 0??????????????
+    #   daca este apelat de doua ori add, nu tine minte ultima pozitie a fisierului deja adaugat si il suprascrie, acest lucru NU se intampla daca ambele fisiere sunt adaugate in acelasi add
+    #   ^de ex, daca dau add 5,24 voi avea (5,5,5,0,0,0...) si dupa dau add 8,32 voi avea (8,8,8,8,0,0,00) si dupa daca dau add 6,16 respectiv 9,24 voi avea (6,6,9,9,9,0,0...) 
+    # banuiesc ca ar merge sa salvez ultima dimensiune  adica 4(%esp) intr-o variabila cu add  sau cv ex: mov arrayLength,%ecx add 4(%esp),%ecx mov %ecx,arrayLength
     #de facut outputul specific add, 
     
 get:
