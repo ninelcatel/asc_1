@@ -80,7 +80,7 @@ _add:
     loop_add:
         
         cmp nrFisiere,%ecx 
-        jge parcurgerevector # afisare_add
+        jge parcurgereVector # afisare_add
         
         push %ecx
 
@@ -157,14 +157,19 @@ afisare_add:
     #   daca este apelat de doua ori add, nu tine minte ultima pozitie a fisierului deja adaugat si il suprascrie, acest lucru NU se intampla daca ambele fisiere sunt adaugate in acelasi add
     #de facut outputul specific add, 
 
-parcurgerevector:
+parcurgereVector:
     xor %ecx,%ecx
+    
+    mov inceputInt,%edx
+    xor %edx,%edx
+    mov %edx,inceputInt
+
     mov (%edi,%ecx,4),%eax 
     mov %eax,idFisier    
     
     loop_afisare:
         cmp lenArray,%ecx
-        jg exit
+        jg back
     
         
         mov (%edi,%ecx,4),%eax
