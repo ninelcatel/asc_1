@@ -12,10 +12,12 @@
     nrOperatii: .space 4
     nrFisiere: .space 4
     dimensiuneFisier: .space 4
-    idFisier: .space 4
+    idFisier: .long 0
     opInvalid: .asciz "Operatie invalida, restartati programul\n"
     printFormat_invalid: .asciz "%s"
-    
+    lenArray: .long 0 
+    inceputInt: .long 1
+    capatInt: .long 0
 .text
 .global main
 main:
@@ -33,7 +35,6 @@ main:
             mov contor,%ecx
             cmp nrOperatii,%ecx
             jge exit
-            push %ecx #tinem minte indexul in stiva
             
             mov $nrFunctie,%eax # ce fel de functie
             
@@ -59,7 +60,6 @@ main:
             je defrag
 
             back:
-                pop %ecx #recuperam registru ecx
                 mov contor,%ecx
             inc %ecx
             mov %ecx,contor         #idfk , nu merge fara var contor
@@ -77,11 +77,10 @@ _add:
     xor %eax,%eax
     xor %ecx,%ecx
     xor %ebx,%ebx
-    push %ebx
     loop_add:
         
         cmp nrFisiere,%ecx 
-        jge afisare_add
+        jge parcurgerevector # afisare_add
         
         push %ecx
 
@@ -108,13 +107,13 @@ _add:
                 div %ebx
                 
                 # eax acum are nr de blocuri pt care trb sa adaug id respectiv
-                mov 8(%esp),%ecx #in acest punct al stivei se afla lungimea completa a arrayului
+                mov lenArray,%ecx #in acest punct al stivei se afla lungimea completa a arrayului
                 add %eax,%ecx #salvam ultimul index unde se va afla blocul 
-                mov %ecx,8(%esp)
+                mov %ecx,lenArray
 
                 push idFisier
                 push %eax
-                push 16(%esp)
+                push lenArray
                 call placeBlocks
                 add $12,%esp
                     
@@ -131,7 +130,7 @@ placeBlocks:
     mov %ebx,%ecx
     sub %eax,%ebx
             placeBlocks_loop:
-                mov 16(%ebp),%eax
+                mov idFisier,%eax
                 mov %eax,(%edi,%ebx,4)
                 inc %ebx
                 cmp %ecx,%ebx
@@ -140,7 +139,8 @@ placeBlocks:
     ret
 
 afisare_add:
-    mov $1,%ecx 
+    mov lenArray,%ecx
+    dec %ecx 
     mov (%edi,%ecx,4),%eax #acceseaza elementul de pe pozitia ecx in vector
     push %eax
     push $0
@@ -148,18 +148,55 @@ afisare_add:
     call printf 
     add $12,%esp
 
-    push 4(%esp) # printeaza %ebx memorat in stiva, adica lunigmea vectorului
+    push lenArray # printeaza %ebx memorat in stiva, adica lunigmea vectorului
     push $0
     push $printFormat_get
     call printf 
     add $12,%esp
     jmp back
-    # de ce baza stivei este resetata la 0??????????????
     #   daca este apelat de doua ori add, nu tine minte ultima pozitie a fisierului deja adaugat si il suprascrie, acest lucru NU se intampla daca ambele fisiere sunt adaugate in acelasi add
-    #   ^de ex, daca dau add 5,24 voi avea (5,5,5,0,0,0...) si dupa dau add 8,32 voi avea (8,8,8,8,0,0,00) si dupa daca dau add 6,16 respectiv 9,24 voi avea (6,6,9,9,9,0,0...) 
-    # banuiesc ca ar merge sa salvez ultima dimensiune  adica 4(%esp) intr-o variabila cu add  sau cv ex: mov arrayLength,%ecx add 4(%esp),%ecx mov %ecx,arrayLength
     #de facut outputul specific add, 
+
+parcurgerevector:
+    xor %ecx,%ecx
+    mov (%edi,%ecx,4),%eax 
+    mov %eax,idFisier    
     
+    loop_afisare:
+        cmp lenArray,%ecx
+        jg exit
+    
+        
+        mov (%edi,%ecx,4),%eax
+        cmp idFisier,%eax
+        jne afisare 
+        inc %ecx
+        mov %ecx,capatInt
+    jmp loop_afisare
+
+afisare:
+    push %ecx
+    push %eax
+    push %ebx
+
+    push capatInt
+    push inceputInt
+    push idFisier
+    push $printFormat
+    call printf 
+    add $16,%esp
+    
+    pop %ebx
+    pop %eax
+    pop %ecx
+
+    mov %ecx,%ebx
+    inc %ebx
+    mov %ebx,inceputInt #crestem cu unul ca sa nu-si dea "overlap" intervalele
+    mov %eax,idFisier # trece la urmatorul fisier
+    
+    jmp loop_afisare
+
 get:
     jmp exit
 del:
@@ -171,10 +208,3 @@ exit:
     mov $1,%eax
     mov $0,%ebx
     int $0x80
-
-exit_invalid:
-    push $opInvalid
-    push $printFormat_invalid
-    call printf 
-    add $8,%esp
-    jmp exit
