@@ -58,7 +58,7 @@ main:
 
             mov nrFunctie,%eax
             cmp $4,%eax
-            je defrag
+            je validArray
 
             back:
                 mov contor,%ecx
@@ -282,8 +282,38 @@ del_capat:
         jne parcurgereVector
         jmp loop_del
     
+validArray:                 #validam daca mai exista 0 intre blocuri, daca exista, facem o shiftare la stanga cu 1 element
+    xor %ecx,%ecx
+    loop_validArray:
+        cmp %ecx,lenArray
+        je parcurgereVector
+        mov (%edi,%ecx,4),%eax
+        cmp $0,%eax
+        je defrag
+        inc %ecx
+        jmp loop_validArray
 defrag:
-    jmp exit
+    loop_defrag:
+        cmp %ecx,lenArray
+        je exit_loop
+
+        inc %ecx
+        mov (%edi,%ecx,4),%ebx
+        dec %ecx
+        mov %ebx,(%edi,%ecx,4)
+        inc %ecx
+        jmp loop_defrag
+    
+    exit_loop:
+    mov lenArray,%ebx
+    mov $0,%eax
+    mov %eax,(%edi,%ebx,4) #nulam blocul din capat pt shiftare la stanga
+    dec %ebx
+    mov %ebx,lenArray
+    jmp validArray
+    
+
+
 exit:
     mov $1,%eax
     mov $0,%ebx
