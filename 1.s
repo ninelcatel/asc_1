@@ -32,6 +32,7 @@ main:
       
     xor %ecx,%ecx
         loop_main:
+            
             mov contor,%ecx
             cmp nrOperatii,%ecx
             jge exit
@@ -61,8 +62,8 @@ main:
 
             back:
                 mov contor,%ecx
-            inc %ecx
-            mov %ecx,contor         #idfk , nu merge fara var contor
+                inc %ecx
+                mov %ecx,contor        
 
                
             jmp loop_main
@@ -175,8 +176,8 @@ parcurgereVector:
         mov (%edi,%ecx,4),%eax
         cmp idFisier,%eax
         jne afisare 
-        inc %ecx
         mov %ecx,capatInt
+        inc %ecx
     jmp loop_afisare
 
 afisare:
@@ -195,15 +196,58 @@ afisare:
     pop %eax
     pop %ecx
 
-    mov %ecx,%ebx
-    inc %ebx
-    mov %ebx,inceputInt #crestem cu unul ca sa nu-si dea "overlap" intervalele
+    mov %ecx,inceputInt #crestem cu unul ca sa nu-si dea "overlap" intervalele
     mov %eax,idFisier # trece la urmatorul fisier
     
     jmp loop_afisare
 
 get:
-    jmp exit
+       mov $idFisier,%eax
+       push %eax
+       push $scanFormat
+       call scanf 
+       add $8,%esp
+
+       xor %ecx,%ecx
+        
+        loop_inceputInt:
+            cmp lenArray,%ecx
+            jg iesi
+            mov (%edi,%ecx,4),%eax
+            cmp idFisier,%eax
+            je get_capat
+            inc %ecx
+            jmp loop_inceputInt
+        
+        iesi:
+        push $0
+        push $0
+        push $printFormat_get
+        call printf 
+        add $12,%esp
+        jmp back
+        
+
+get_capat:
+    push %ecx
+    
+    loop_capatInt:
+        
+        mov (%edi,%ecx,4),%eax
+        cmp idFisier,%eax
+        jne get_print
+        inc %ecx
+        jmp loop_capatInt
+get_print:
+    dec %ecx
+    pop %eax
+    push %ecx
+    push %eax
+    push $printFormat_get
+    call printf
+    add $12,%esp
+    jmp back
+
 del:
     jmp exit
 
