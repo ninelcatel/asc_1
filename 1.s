@@ -1,5 +1,4 @@
 .section .note.GNU-stack,"",@progbits
-#1=add 2=get 3=delete 4=defragmentation
 #gcc -m32 1.s -o 1 -no-pie 
 #^ compilare
 .data
@@ -139,24 +138,6 @@ placeBlocks:
     pop %ebp
     ret
 
-afisare_add:
-    mov lenArray,%ecx
-    dec %ecx 
-    mov (%edi,%ecx,4),%eax #acceseaza elementul de pe pozitia ecx in vector
-    push %eax
-    push $0
-    push $printFormat_get
-    call printf 
-    add $12,%esp
-
-    push lenArray # printeaza %ebx memorat in stiva, adica lunigmea vectorului
-    push $0
-    push $printFormat_get
-    call printf 
-    add $12,%esp
-    jmp back
-    #   daca este apelat de doua ori add, nu tine minte ultima pozitie a fisierului deja adaugat si il suprascrie, acest lucru NU se intampla daca ambele fisiere sunt adaugate in acelasi add
-    #de facut outputul specific add, 
 
 parcurgereVector:
     xor %ecx,%ecx
