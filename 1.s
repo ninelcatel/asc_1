@@ -171,19 +171,24 @@ parcurgereVector:
     loop_afisare:
         cmp lenArray,%ecx
         jg back
-    
-        
+
         mov (%edi,%ecx,4),%eax
         cmp idFisier,%eax
         jne afisare 
+
         mov %ecx,capatInt
         inc %ecx
     jmp loop_afisare
 
 afisare:
+
     push %ecx
     push %eax
     push %ebx
+    
+    mov idFisier,%edx
+    cmp $0,%edx
+    je skip
 
     push capatInt
     push inceputInt
@@ -191,7 +196,9 @@ afisare:
     push $printFormat
     call printf 
     add $16,%esp
-    
+
+    skip:
+
     pop %ebx
     pop %eax
     pop %ecx
@@ -249,8 +256,32 @@ get_print:
     jmp back
 
 del:
-    jmp exit
+     mov $idFisier,%eax
+       push %eax
+       push $scanFormat
+       call scanf 
+       add $8,%esp
 
+       xor %ecx,%ecx
+        
+        loop_gasimFisier:
+            cmp lenArray,%ecx
+            jg back
+            mov (%edi,%ecx,4),%eax
+            cmp idFisier,%eax
+            je del_capat
+            inc %ecx
+            jmp loop_gasimFisier
+del_capat:
+    loop_del:
+        mov $0,%ebx
+        mov %ebx,(%edi,%ecx,4)
+        inc %ecx
+        mov (%edi,%ecx,4),%eax
+        cmp idFisier,%eax
+        jne parcurgereVector
+        jmp loop_del
+    
 defrag:
     jmp exit
 exit:
