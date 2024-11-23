@@ -3,7 +3,7 @@
 #^ compilare
 .data
     contor: .long 0
-    blocuri: .space 1048576 #2^20 (128x128)
+    blocuri: .space 1048576 #2^20 bytes (1024x1024 bytes)
     printFormat: .asciz "%d: (%d, %d)\n"
     printFormat_get: .asciz "(%d, %d)\n"
     scanFormat: .asciz "%d"
@@ -24,6 +24,16 @@ main:
     
     lea blocuri, %edi 
     lea lenArray, %esi
+
+    xor %ecx,%ecx
+    xor %eax,%eax
+    loop_nullArray:
+        cmp $256,%ecx
+        jge gata
+        mov $0,(%esi,%ecx,4)
+        jmp loop_nullArray
+    gata:
+
 
     mov $nrOperatii,%eax            #input cate operatii
     push %eax
@@ -111,13 +121,25 @@ _add:
                 div %ebx
                 
                 # eax acum are nr de blocuri pt care trb sa adaug id respectiv
-                mov lenArray,%ecx #in acest punct al stivei se afla lungimea completa a arrayului
-                add %eax,%ecx #salvam ultimul index unde se va afla blocul 
-                mov %ecx,lenArray
+%
+                xor %ecx,%ecx
+                loop_verif_lenRows:
+                        mov (%esi,%ecx,4),%ebx
+                        add %eax,%ebx
+                        cmp $256,%ebx
+                        jl gasit_contor:
+                        inc %ecx
 
-                push idFisier
+                gasit_contor:
+
+                mov (%esi,%ecx,4),%ebx
+                add %eax,%ebx
+                mov %ebx,(%esi,%ecx,4)
+
+
+                push %ecx # care rand
                 push %eax
-                push lenArray
+                push %ebx # reprezinta lungimea curenta a rowului
                 call placeBlocks
                 add $12,%esp
                     
@@ -129,14 +151,28 @@ placeBlocks:
     push %ebp
     mov %esp,%ebp
 
-    #trb schimbat sotto
-    mov 8(%ebp), %ebx
+    mov 8(%ebp), %ebx 
     mov 12(%ebp), %eax
+    mov 16(%ebp), %edx      # pe care rand este
     mov %ebx,%ecx
-    sub %eax,%ebx
+    sub %eax,%ebx   #%ebx este valoarea de la care incepe atribuirea, %ecx unde se sfarseste%
+
+                push %ebx
+                push %ecx
+                
+                mov $256,%ecx
+                mul %ecx,%edx
+                add %ebx,%edx  #asa ajungem pe randul corect, si dupa doar incrementam ebx dupa fiecare atribuireS
+                
+                pop %ecx
+                pop %ebx
+            
             placeBlocks_loop:
-                mov idFisier,%eax
-                mov %eax,(%edi,%ebx,4)
+                
+
+                   mov idFisier,%eax
+                mov %eax,(%edi,%edx,4)%
+               
                 inc %ebx
                 cmp %ecx,%ebx
                 jl placeBlocks_loop
