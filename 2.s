@@ -4,8 +4,8 @@
 .data
     contor: .long 0
     blocuri: .space 1048576 #2^20 bytes (1024x1024 bytes)
-    printFormat: .asciz "%d: (%d, %d)\n"
-    printFormat_get: .asciz "(%d, %d)\n"
+    printFormat: .asciz "%d: ((%d, %d), (%d, %d))\n"
+    printFormat_get: .asciz "((%d, %d) (%d, %d))\n"
     scanFormat: .asciz "%d"
     nrFunctie: .space 4
     nrOperatii: .space 4
@@ -17,6 +17,8 @@
     lenArray: .space 1024 #numarul de elemente pe fiecare rand 
     inceputInt: .long 1
     capatInt: .long 0
+    lenArrayCurrent: .space 4
+    linieArray: .long 0
 .text
 .global main
 main:
@@ -27,10 +29,12 @@ main:
 
     xor %ecx,%ecx
     xor %eax,%eax
+    mov %eax,lenArrayCurrent
     loop_nullArray:
         cmp $256,%ecx
         jge gata
-        mov $0,(%esi,%ecx,4)
+        mov %eax,(%esi,%ecx,4)
+        inc %ecx
         jmp loop_nullArray
     gata:
 
@@ -81,7 +85,6 @@ main:
     jmp exit
 
 _add:    
-    #nu cred ca trb ceva schimbat aici           
     mov $nrFisiere,%eax                 #input cate fisiere
     push %eax
     push $scanFormat
@@ -121,13 +124,13 @@ _add:
                 div %ebx
                 
                 # eax acum are nr de blocuri pt care trb sa adaug id respectiv
-%
+
                 xor %ecx,%ecx
                 loop_verif_lenRows:
                         mov (%esi,%ecx,4),%ebx
                         add %eax,%ebx
                         cmp $256,%ebx
-                        jl gasit_contor:
+                        jl gasit_contor
                         inc %ecx
 
                 gasit_contor:
@@ -161,67 +164,109 @@ placeBlocks:
                 push %ecx
                 
                 mov $256,%ecx
-                mul %ecx,%edx
+                imul %ecx,%edx
                 add %ebx,%edx  #asa ajungem pe randul corect, si dupa doar incrementam ebx dupa fiecare atribuireS
                 
                 pop %ecx
                 pop %ebx
-            
-            placeBlocks_loop:
                 
+                add %ebx,%edx
 
-                   mov idFisier,%eax
-                mov %eax,(%edi,%edx,4)%
-               
-                inc %ebx
-                cmp %ecx,%ebx
-                jl placeBlocks_loop
+                placeBlocks_loop:
+                    mov idFisier,%eax
+                    mov %eax,(%edi,%edx,4)
+                    inc %ebx
+                    inc %edx
+                    cmp %ecx,%ebx                   # nu face corect atribuirea, adauga zerouri intre fisiere sau nu printeaza corect
+                    jl placeBlocks_loop
     pop %ebp
     ret
 
 
 parcurgereVector:
-    xor %ecx,%ecx #trbuie schimbat sotto
+    xor %ecx,%ecx
+    xor %ebx,%ebx
 
     mov inceputInt,%edx
     xor %edx,%edx
     mov %edx,inceputInt
+    
+   
 
     mov (%edi,%ecx,4),%eax 
     mov %eax,idFisier    
+    push %eax
     
+    mov (%esi,%ebx,4),%eax
+    mov %eax,lenArrayCurrent       #schimbam urmatorul rand cand atingem lenArrayCurrent
+    
+    pop %eax
+   
     loop_afisare:
-        cmp lenArray,%ecx
-        jg back
+        
+        
 
-        mov (%edi,%ecx,4),%eax
+        cmp lenArrayCurrent,%ecx  # trebuie parcursa toata matricea ca sa putem arata fisierele inainte de defragmentare
+        jge incrementareLenArray
+
+        mov (%edi,%edx,4),%eax
         cmp idFisier,%eax
         jne afisare 
 
-        mov %ecx,capatInt
         inc %ecx
+        inc %edx
+        mov %ecx,capatInt
     jmp loop_afisare
 
+
+incrementareLenArray:
+    inc %ebx        #%ebx reprezinta contor pentru linia matricei, cat sipentru lenArray 
+    cmp $256,%ebx   # daca a ajuns la sfarsitul matricei ne intoarcem
+    jge back
+    mov %ebx,linieArray
+    push %edx
+        
+        mov (%esi,%ebx,4),%edx
+        mov %edx,lenArrayCurrent
+    
+    pop %edx
+
+    push %ecx
+    push %ebx
+
+        mov $256,%ecx
+        imul %ecx,%ebx
+        mov %ebx, %edx
+
+    pop %ebx
+    pop %ecx
+    
+    xor %ecx,%ecx
+    jmp loop_afisare
 afisare:
 
     #trb schimbat sotto
     push %ecx
     push %eax
     push %ebx
-    
+    push %edx
+
     mov idFisier,%edx
-    cmp $0,%edx
-    je skip
+                 #  cmp $0,%edx     # sa nu arate blocurile egale cu 0
+                 #  je skip
 
     push capatInt
+    push linieArray
     push inceputInt
+    push linieArray
     push idFisier
     push $printFormat
     call printf 
-    add $16,%esp
+    add $24,%esp
 
     skip:
 
+    pop %edx
     pop %ebx
     pop %eax
     pop %ecx
