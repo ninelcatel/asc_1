@@ -1,6 +1,8 @@
 .section .note.GNU-stack,"",@progbits
 #gcc -m32 2.s -o 2 -no-pie 
 #^ compilare
+#daca adaugam secvential din ceva motiv se duce la coloana 255
+#interesant ca daca inseram un fisier care nu incape pe coloana 255 il baga la 1 cum ar trb normal,poate ceva de print? 
 .data
     contor: .long 0
     blocuri: .space 1048576 #2^20 bytes (1024x1024 bytes)
@@ -49,6 +51,11 @@ main:
     xor %ecx,%ecx
         loop_main:
             
+            push %ecx
+            mov $0, %ecx
+            mov %ecx, linieArray #pentru adaugari secventiale sa nu mai ajunga la randul 255 
+            pop %ecx
+
             mov contor,%ecx
             cmp nrOperatii,%ecx
             jge exit
