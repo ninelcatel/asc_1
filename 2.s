@@ -6,6 +6,7 @@
     blocuri: .space 1048576 #2^20 bytes (1024x1024 bytes)
     printFormat: .asciz "%d: ((%d, %d), (%d, %d))\n"
     printFormat_get: .asciz "((%d, %d) (%d, %d))\n"
+    printFormat_dbg: .asciz "%d\n"
     scanFormat: .asciz "%d"
     nrFunctie: .space 4
     nrOperatii: .space 4
@@ -17,7 +18,7 @@
     lenArray: .space 1024 #numarul de elemente pe fiecare rand 
     inceputInt: .long 1
     capatInt: .long 0
-    lenArrayCurrent: .space 4
+    lenArrayCurrent: .long 0
     linieArray: .long 0
 .text
 .global main
@@ -149,35 +150,58 @@ _add:
         pop %ecx
         inc %ecx
         jmp loop_add
-    
-placeBlocks:
+afisare2:
+    xor %ecx,%ecx
+    mov (%esi,%ecx,4),%edx
+
+    loop_bbb:
+        cmp %edx,%ecx
+        jge exit
+        mov (%edi,%ecx,4),%eax
+        mov %eax,capatInt
+        push %ecx
+        push %edx
+
+        push capatInt
+        push $printFormat_dbg
+        call printf
+        add $8,%esp
+        
+        pop %edx
+        pop %ecx
+
+        inc %ecx
+        jmp loop_bbb
+
+placeBlocks:# functioneaza corect, arrayul arata ok,cel putin pe prima linie
     push %ebp
     mov %esp,%ebp
 
     mov 8(%ebp), %ebx 
     mov 12(%ebp), %eax
-    mov 16(%ebp), %edx      # pe care rand este
+    mov 16(%ebp), %edx      # pe care rand este prin intermediul loop_verif_lenRows
     mov %ebx,%ecx
     sub %eax,%ebx   #%ebx este valoarea de la care incepe atribuirea, %ecx unde se sfarseste%
 
                 push %ebx
                 push %ecx
-                
+
                 mov $256,%ecx
                 imul %ecx,%edx
                 add %ebx,%edx  #asa ajungem pe randul corect, si dupa doar incrementam ebx dupa fiecare atribuireS
                 
                 pop %ecx
                 pop %ebx
-                
-                add %ebx,%edx
 
+                add %ebx,%edx
+                
+                mov idFisier,%eax
+              
                 placeBlocks_loop:
-                    mov idFisier,%eax
-                    mov %eax,(%edi,%edx,4)
+                    mov %eax,(%edi,%ebx,4)
                     inc %ebx
                     inc %edx
-                    cmp %ecx,%ebx                   # nu face corect atribuirea, adauga zerouri intre fisiere sau nu printeaza corect
+                    cmp %ecx,%ebx                  
                     jl placeBlocks_loop
     pop %ebp
     ret
@@ -201,21 +225,20 @@ parcurgereVector:
     mov %eax,lenArrayCurrent       #schimbam urmatorul rand cand atingem lenArrayCurrent
     
     pop %eax
-   
+    
+
     loop_afisare:
         
-        
-
-        cmp lenArrayCurrent,%ecx  # trebuie parcursa toata matricea ca sa putem arata fisierele inainte de defragmentare
-        jge incrementareLenArray
-
         mov (%edi,%edx,4),%eax
         cmp idFisier,%eax
-        jne afisare 
+        jne afisare         
 
+        cmp lenArrayCurrent,%ecx  # trebuie parcursa toata matricea ca sa putem arata fisierele inainte de defragmentare
+        jge incrementareLenArray  #cel mai probabil chestia asta nu e ok, incrementareLenArray specifci
+        mov %ecx,capatInt   #trebuie dat move inainte de incrementare ca sa nu creasca din greseala cu 1 interavlul
         inc %ecx
         inc %edx
-        mov %ecx,capatInt
+        
     jmp loop_afisare
 
 
@@ -252,8 +275,8 @@ afisare:
     push %edx
 
     mov idFisier,%edx
-                 #  cmp $0,%edx     # sa nu arate blocurile egale cu 0
-                 #  je skip
+                   #cmp $0,%edx     # sa nu arate blocurile egale cu 0 dupa delete
+                   #je skip
 
     push capatInt
     push linieArray
@@ -274,6 +297,8 @@ afisare:
     mov %ecx,inceputInt #crestem cu unul ca sa nu-si dea "overlap" intervalele
     mov %eax,idFisier # trece la urmatorul fisier
     
+   
+
     jmp loop_afisare
 
 get:
