@@ -272,8 +272,7 @@ afisare:
     push %ebx
     push %edx
 
-    cmp $256,%ecx       # la input.txt curernt face fite pt ca ultimu element este 256
-    jne reinitializam
+   
 
 
     mov idFisier,%edx
@@ -295,12 +294,19 @@ afisare:
     pop %ebx
     pop %eax
     pop %ecx
-
-    mov %ecx,inceputInt #crestem cu unul ca sa nu-si dea "overlap" intervalele
-    mov %eax,idFisier # trece la urmatorul fisier
     
-   
+    mov %eax,idFisier # trece la urmatorul fisier
 
+    cmp $256,%ecx
+    je e_ok
+    mov %ecx,inceputInt #crestem cu unul ca sa nu-si dea "overlap" intervalele
+    jmp loop_afisare
+    e_ok:
+    push %ecx
+    mov $0,%ecx
+    mov %ecx,inceputInt
+    pop %ecx
+    
     jmp loop_afisare
 
 get:
