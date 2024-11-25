@@ -131,9 +131,9 @@ _add:
                         mov (%esi,%ecx,4),%ebx
                         add %eax,%ebx
                         cmp $256,%ebx
-                        jl gasit_contor
+                        jle gasit_contor
                         inc %ecx
-
+                        jmp loop_verif_lenRows
                 gasit_contor:
 
                 mov (%esi,%ecx,4),%ebx
@@ -153,7 +153,6 @@ _add:
 afisare2:
     xor %ecx,%ecx
     mov (%esi,%ecx,4),%edx
-
     loop_bbb:
         cmp %edx,%ecx
         jge exit
@@ -173,7 +172,7 @@ afisare2:
         inc %ecx
         jmp loop_bbb
 
-placeBlocks:# functioneaza corect, arrayul arata ok,cel putin pe prima linie
+placeBlocks: #functioneaza corect
     push %ebp
     mov %esp,%ebp
 
@@ -188,7 +187,7 @@ placeBlocks:# functioneaza corect, arrayul arata ok,cel putin pe prima linie
 
                 mov $256,%ecx
                 imul %ecx,%edx
-                add %ebx,%edx  #asa ajungem pe randul corect, si dupa doar incrementam ebx dupa fiecare atribuireS
+                  #asa ajungem pe randul corect, si dupa doar incrementam ebx dupa fiecare atribuireS
                 
                 pop %ecx
                 pop %ebx
@@ -198,7 +197,7 @@ placeBlocks:# functioneaza corect, arrayul arata ok,cel putin pe prima linie
                 mov idFisier,%eax
               
                 placeBlocks_loop:
-                    mov %eax,(%edi,%ebx,4)
+                    mov %eax,(%edi,%edx,4)
                     inc %ebx
                     inc %edx
                     cmp %ecx,%ebx                  
@@ -207,11 +206,9 @@ placeBlocks:# functioneaza corect, arrayul arata ok,cel putin pe prima linie
     ret
 
 
-parcurgereVector:
+parcurgereVector:   # din ceva motiv incrementeaza lenArray dupa fiecare afisare(cred , nu neapart) si nu iese ce trb ,ori incrementareLenArray e problema ori afisare
     xor %ecx,%ecx
     xor %ebx,%ebx
-
-    mov inceputInt,%edx
     xor %edx,%edx
     mov %edx,inceputInt
     
@@ -235,6 +232,7 @@ parcurgereVector:
 
         cmp lenArrayCurrent,%ecx  # trebuie parcursa toata matricea ca sa putem arata fisierele inainte de defragmentare
         jge incrementareLenArray  #cel mai probabil chestia asta nu e ok, incrementareLenArray specifci
+        
         mov %ecx,capatInt   #trebuie dat move inainte de incrementare ca sa nu creasca din greseala cu 1 interavlul
         inc %ecx
         inc %edx
@@ -274,9 +272,13 @@ afisare:
     push %ebx
     push %edx
 
+    cmp $256,%ecx       # la input.txt curernt face fite pt ca ultimu element este 256
+    jne reinitializam
+
+
     mov idFisier,%edx
-                   #cmp $0,%edx     # sa nu arate blocurile egale cu 0 dupa delete
-                   #je skip
+                   cmp $0,%edx     # sa nu arate blocurile egale cu 0 dupa delete
+                   je skip
 
     push capatInt
     push linieArray
