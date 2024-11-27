@@ -22,6 +22,7 @@
     capatInt: .long 0
     lenArrayCurrent: .long 0
     linieArray: .long 0
+    contorCheck: .long 0
 .text
 .global main
 main:
@@ -134,6 +135,15 @@ _add:
                 # eax acum are nr de blocuri pt care trb sa adaug id respectiv
 
                 xor %ecx,%ecx
+                
+                jmp existSecv
+                continue:
+            pop %eax
+            pop %edx
+            pop %ebx
+            pop %ecx
+
+
                 loop_verif_lenRows:
                         mov (%esi,%ecx,4),%ebx
                         add %eax,%ebx
@@ -153,10 +163,90 @@ _add:
                 push %ebx # reprezinta lungimea curenta a rowului
                 call placeBlocks
                 add $12,%esp
-                    
+            else:    
         pop %ecx
         inc %ecx
         jmp loop_add
+existSecv:
+    push %ecx 
+    push %ebx 
+    push %edx 
+    push %eax 
+    xor %ebx,%ebx
+    xor %ecx,%ecx
+    mov (%esi,%ecx,4),%edx
+    mov %edx,lenArrayCurrent
+    xor %edx,%edx
+    loop_check:
+        push %edx
+        mov $256,%edx
+        imul %ebx,%edx
+        add %ecx,%edx
+        cmp lenArrayCurrent,%ecx 
+        je incCheck
+        push %eax 
+        mov (%edi,%edx,4),%eax
+        inc %ecx
+        cmp $0,%eax
+        jne xoram
+        pop %eax
+        pop %edx
+        inc %edx
+        cmp %eax,%edx
+        je placeBlocks_secv
+        jmp loop_check
+    xoram:
+        pop %eax
+        pop %edx
+        xor %edx,%edx
+        jmp loop_check
+    placeBlocks_secv:
+        mov $256,%edx
+        imul %ebx,%edx
+        add %ecx,%edx
+        push %ebx #1
+        push %eax #3
+        push %edx #259
+        call placeBlocks_secv2
+        add $12,%esp
+        pop %eax
+        pop %edx
+        pop %ebx
+        pop %ecx
+        jmp else
+placeBlocks_secv2: 
+    push %ebp
+    mov %esp,%ebp
+
+    mov 8(%ebp), %edx 
+    mov 12(%ebp), %eax
+    mov 16(%ebp), %ebx      
+    mov %edx,%ecx
+    sub %eax,%edx
+                mov idFisier,%eax
+              
+                placeBlocks_loop_secv:
+                    mov %eax,(%edi,%edx,4)
+                    inc %edx
+                    cmp %ecx,%edx                  
+                    jl placeBlocks_loop_secv
+    pop %ebp
+    ret
+
+
+incCheck:
+    pop %edx
+    
+    inc %ebx
+    cmp $2,%ebx
+    jge continue
+    push %edx
+    mov (%esi,%ebx,4),%edx
+    mov %edx,lenArrayCurrent
+    xor %ecx,%ecx 
+    pop %edx
+    xor %edx,%edx
+    jmp loop_check
 afisare2:
     xor %ecx,%ecx
     mov (%esi,%ecx,4),%edx
@@ -249,7 +339,7 @@ parcurgereVector:   # din ceva motiv incrementeaza lenArray dupa fiecare afisare
 
 incrementareLenArray:
     inc %ebx        #%ebx reprezinta contor pentru linia matricei, cat sipentru lenArray 
-    cmp $256,%ebx   # daca a ajuns la sfarsitul matricei ne intoarcem
+    cmp $2,%ebx   # daca a ajuns la sfarsitul matricei ne intoarcem
     jge back
     mov %ebx,linieArray
     push %edx
