@@ -316,49 +316,75 @@ afisare:
     
     jmp loop_afisare
 
-get:
-       mov $idFisier,%eax
-       push %eax
-       push $scanFormat
-       call scanf 
-       add $8,%esp
 
-       xor %ecx,%ecx
+get:
+        mov $idFisier,%eax
+        push %eax
+        push $scanFormat
+        call scanf 
+        add $8,%esp
+
+        xor %ecx,%ecx
         
+        mov (%esi,%ecx,4),%ebx
+        mov %ebx,lenArrayCurrent
+
+        xor %ebx,%ebx
+        xor %edx,%edx
+
         loop_inceputInt:
-            cmp lenArray,%ecx       #de schimbat lenarray ca adresa lea cu esi
-            jg iesi
-            mov (%edi,%ecx,4),%eax
+            cmp lenArrayCurrent,%ecx       
+            jge incLen_array
+            mov (%edi,%edx,4),%eax
             cmp idFisier,%eax
             je get_capat
+            inc %edx
             inc %ecx
             jmp loop_inceputInt
         
         iesi:
+        
         push $0
         push $0
         push $printFormat_get
         call printf 
         add $12,%esp
         jmp back
-        
+
+incLen_array:
+    inc %ebx
+    
+    push %edx
+    mov (%esi,%ebx,4),%edx
+    mov %edx,lenArrayCurrent
+    pop %edx
+
+    mov $256,%edx
+    imul %ebx,%edx
+    xor %ecx,%ecx
+
+    jmp loop_inceputInt
 
 get_capat:
     push %ecx
     
     loop_capatInt:                  #trb facut pt matrix
         
-        mov (%edi,%ecx,4),%eax
+        mov (%edi,%edx,4),%eax
         cmp idFisier,%eax
         jne get_print
+        inc %edx
         inc %ecx
         jmp loop_capatInt
 get_print:
     #trb facut pt matrix
     dec %ecx
     pop %eax
+    
     push %ecx
+    push linieArray
     push %eax
+    push linieArray
     push $printFormat_get
     call printf
     add $12,%esp
