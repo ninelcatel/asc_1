@@ -104,23 +104,63 @@ _add:
                 dec %ecx
                 add %ecx,%eax
                 xor %edx, %edx
-                div %ebx
+                div %ebx    # eax acum are nr de blocuri pt care trb sa adaug id respectiv
                 
-                # eax acum are nr de blocuri pt care trb sa adaug id respectiv
+                jmp existSecv
+
+                continue:
+                pop %edx
+                pop %eax
+                pop %ebx
+                pop %ecx
+        
                 mov lenArray,%ecx #in acest punct al stivei se afla lungimea completa a arrayului
                 add %eax,%ecx #salvam ultimul index unde se va afla blocul 
+                cmp $255,%ecx   #daca fisierul este prea mare
+                jge else
                 mov %ecx,lenArray
-
+                
                 push idFisier
                 push %eax
                 push lenArray
                 call placeBlocks
                 add $12,%esp
-                    
+                
+        else:
         pop %ecx
         inc %ecx
         jmp loop_add
-    
+existSecv:
+    push %ecx
+    push %ebx
+    push %eax
+    push %edx 
+    xor %ecx,%ecx
+    loop_check:
+        cmp lenArray,%ecx 
+        je continue
+        mov (%edi,%ecx,4),%ebx
+        inc %ecx
+        cmp $0,%ebx
+        jne xoram
+        inc %edx
+        cmp %eax,%edx  #verificam daca incape
+        je pBlocks_secv
+        jmp loop_check
+    xoram:
+        xor %edx,%edx
+        jmp loop_check
+    pBlocks_secv:
+        push idFisier
+        push %eax
+        push %ecx
+        call placeBlocks
+        add $12,%esp
+        pop %edx
+        pop %eax
+        pop %ebx
+        pop %ecx
+        jmp else
 placeBlocks:
     push %ebp
     mov %esp,%ebp
@@ -137,6 +177,8 @@ placeBlocks:
                 jl placeBlocks_loop
     pop %ebp
     ret
+
+
 
 
 parcurgereVector:
