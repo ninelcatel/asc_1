@@ -273,14 +273,10 @@ incrementareLenArray:
     jmp loop_afisare
 afisare:
 
-    #trb schimbat sotto
     push %ecx
     push %eax
     push %ebx
     push %edx
-
-   
-
 
     mov idFisier,%edx
                    cmp $0,%edx     # sa nu arate blocurile egale cu 0 dupa delete
@@ -356,8 +352,8 @@ get:
 incLen_array:
     inc %ebx
     cmp $256,%ebx
+    jge iesi
     mov %ebx,linieArray
-    jg iesi
     push %edx
     mov (%esi,%ebx,4),%edx
     mov %edx,lenArrayCurrent
@@ -428,7 +424,7 @@ del_capat:
 incLen_arrayDel:
     inc %ebx
     cmp $256,%ebx
-    jg parcurgereVector
+    jge parcurgereVector
     push %edx
     mov (%esi,%ebx,4),%edx
     mov %edx,lenArrayCurrent
@@ -441,33 +437,73 @@ incLen_arrayDel:
     jmp loop_gasimFisier
 validArray:                 #validam daca mai exista 0 intre blocuri, daca exista, facem o shiftare la stanga cu 1 element  #trb facut pt matrix
     xor %ecx,%ecx
+    mov (%esi,%ecx,4),%ebx
+    mov %ebx,lenArrayCurrent
+    xor %ebx,%ebx
+    xor %edx,%edx
+
     loop_validArray:
-        cmp %ecx,lenArray
-        je parcurgereVector
-        mov (%edi,%ecx,4),%eax
+        cmp %ecx,lenArrayCurrent
+        je incLen_arrayDef #parcurgereVector
+        mov (%edi,%edx,4),%eax
         cmp $0,%eax
         je defrag
+        inc %edx
         inc %ecx
         jmp loop_validArray
-defrag:         #trb facut pt matrix
+incLen_arrayDef:
+    inc %ebx
+    cmp $256,%ebx
+    jge parcurgereVector
+    
+    push %edx
+    mov (%esi,%ebx,4),%edx
+    mov %edx,lenArrayCurrent
+    pop %edx
+
+    mov $256,%edx
+    imul %ebx,%edx
+    xor %ecx,%ecx
+    jmp loop_validArray
+
+defrag:         
+     push %edx
+     push %ecx #tinem minte unde am ramas
+    push %ebx #pastram pe ce linie ne aflam
+   
     loop_defrag:
-        cmp %ecx,lenArray
+        cmp %ecx,lenArrayCurrent
         je exit_loop
 
-        inc %ecx
-        mov (%edi,%ecx,4),%ebx
-        dec %ecx
-        mov %ebx,(%edi,%ecx,4)
+        inc %edx
+        mov (%edi,%edx,4),%ebx
+        dec %edx
+        mov %ebx,(%edi,%edx,4)
+        inc %edx
         inc %ecx
         jmp loop_defrag
     
     exit_loop:
-    mov lenArray,%ebx
-    mov $0,%eax
-    mov %eax,(%edi,%ebx,4) #nulam blocul din capat pt shiftare la stanga
+    
+    pop %ecx
+    push %ecx
+    
+    mov lenArrayCurrent,%ebx
+    mov $256,%edx
+    imul %ecx,%edx
     dec %ebx
-    mov %ebx,lenArray
-    jmp validArray
+    add %ebx,%edx
+    
+    mov $0,%eax
+    mov %eax,(%edi,%edx,4) #nulam blocul din capat pt shiftare la stanga
+    
+    mov %ebx,(%esi,%ecx,4)
+    mov %ebx,lenArrayCurrent
+
+    pop %ebx
+    pop %ecx
+    pop %edx
+    jmp loop_validArray
     
 
 
