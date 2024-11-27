@@ -219,7 +219,7 @@ parcurgereVector:   # din ceva motiv incrementeaza lenArray dupa fiecare afisare
     xor %edx,%edx
     mov %edx,inceputInt
     
-   
+    mov %edx,linieArray
 
     mov (%edi,%ecx,4),%eax 
     mov %eax,idFisier    
@@ -346,14 +346,18 @@ get:
         
         push $0
         push $0
+        push $0
+        push $0
         push $printFormat_get
         call printf 
-        add $12,%esp
+        add $20,%esp
         jmp back
 
 incLen_array:
     inc %ebx
-    
+    cmp $256,%ebx
+    mov %ebx,linieArray
+    jg iesi
     push %edx
     mov (%esi,%ebx,4),%edx
     mov %edx,lenArrayCurrent
@@ -362,7 +366,7 @@ incLen_array:
     mov $256,%edx
     imul %ebx,%edx
     xor %ecx,%ecx
-
+    
     jmp loop_inceputInt
 
 get_capat:
@@ -377,7 +381,7 @@ get_capat:
         inc %ecx
         jmp loop_capatInt
 get_print:
-    #trb facut pt matrix
+    
     dec %ecx
     pop %eax
     
@@ -387,36 +391,54 @@ get_print:
     push linieArray
     push $printFormat_get
     call printf
-    add $12,%esp
+    add $20,%esp
     jmp back
 
-del:    #trb facut pt matrix
-     mov $idFisier,%eax
+del:    
+    mov $idFisier,%eax
        push %eax
        push $scanFormat
        call scanf 
        add $8,%esp
 
        xor %ecx,%ecx
-        
+        mov (%esi,%ecx,4),%ebx
+        mov %ebx,lenArrayCurrent
+        xor %ebx,%ebx
+        xor %edx,%edx
+
         loop_gasimFisier:
-            cmp lenArray,%ecx
-            jg back
-            mov (%edi,%ecx,4),%eax
+            cmp lenArrayCurrent,%ecx
+            jge incLen_arrayDel
+            mov (%edi,%edx,4),%eax
             cmp idFisier,%eax
             je del_capat
+            inc %edx
             inc %ecx
             jmp loop_gasimFisier
-del_capat:  #trb facut pt matrix
+del_capat:  
     loop_del:
         mov $0,%ebx
-        mov %ebx,(%edi,%ecx,4)
-        inc %ecx
-        mov (%edi,%ecx,4),%eax
+        mov %ebx,(%edi,%edx,4)
+        inc %edx
+        mov (%edi,%edx,4),%eax
         cmp idFisier,%eax
         jne parcurgereVector
         jmp loop_del
+incLen_arrayDel:
+    inc %ebx
+    cmp $256,%ebx
+    jg parcurgereVector
+    push %edx
+    mov (%esi,%ebx,4),%edx
+    mov %edx,lenArrayCurrent
+    pop %edx
+
+    mov $256,%edx
+    imul %ebx,%edx
+    xor %ecx,%ecx
     
+    jmp loop_gasimFisier
 validArray:                 #validam daca mai exista 0 intre blocuri, daca exista, facem o shiftare la stanga cu 1 element  #trb facut pt matrix
     xor %ecx,%ecx
     loop_validArray:
