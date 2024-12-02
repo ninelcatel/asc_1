@@ -4,25 +4,110 @@
 .data
     contor: .long 0
     blocuri: .space 1024  
+    printFormatt: .asciz "%s\n"
     printFormat: .asciz "%d: (%d, %d)\n"
     printFormat_get: .asciz "(%d, %d)\n"
     scanFormat: .asciz "%d"
     nrFunctie: .space 4
-    nrOperatii: .space 4
+    nrOperatii: .long 0
     nrFisiere: .space 4
     dimensiuneFisier: .space 4
-    idFisier: .long 0
+    idFisier: .space 1
     opInvalid: .asciz "Operatie invalida, restartati programul\n"
     printFormat_invalid: .asciz "%s"
     lenArray: .long 0 
     inceputInt: .long 1
     capatInt: .long 0
+    basePath: .asciz "/home/ninel/facultate/asc/proiectFiles"
+    adresa: .asciz "/home/ninel/facultate/asc/proiectFiles/1"
+    fullPath: .space 30
+    fileName: .space 2
+    dot: .asciz "."
+    dotdot: .asciz ".."
+    statBuffer: .space 96
+    ptrDirEnt: .long 0
 .text
 .global main
 main:
+    xor %ecx,%ecx 
 
     lea blocuri,%edi                #incarcam adresa blocurilor in edi pentru a le prelucra
     
+    lea basePath,%ebx
+    push %ebx
+    call opendir
+    add $4,%esp
+    cmp $0,%eax
+    je exit
+    mov %eax,ptrDirEnt
+
+
+    readNext:
+    push %ecx 
+    mov ptrDirEnt,%ebx 
+    push %ebx
+    call readdir
+    add $4,%esp
+    cmp $0,%eax
+    je close
+    pop %ecx 
+  
+    lea 11(%eax),%ebx
+    
+    cmpb $'.',(%ebx) 
+    je readNext
+    inc %ebx
+    cmpb $'.',(%ebx)
+    je readNext
+    dec %ebx
+    
+    xor %eax,%eax
+    xor %ecx,%ecx 
+    xor %edx,%edx 
+    convert:
+        movb (%ebx,%ecx),%al 
+        cmp $0,%al 
+        je done 
+        sub $'0',%al 
+        jl readNext
+        cmp $9,%al 
+        jg readNext
+        imul $10,%edx
+        add %eax,%edx
+        inc %ecx
+        jmp convert
+    done:
+    mov %edx,idFisier 
+             
+    push %ecx 
+
+    push $statBuffer
+    push $adresa
+    call stat 
+    add $8,%esp 
+    
+    pop %ecx #fileName addrses
+
+    mov $statBuffer,%eax #filesize
+    mov 20(%eax),%edx # struct address in st_id
+    mov 44(%eax),%eax # struct addres in st_size
+    mov %eax,dimensiuneFisier
+    push %eax
+    push %ecx
+    jmp addFisier
+    
+    backFisiere:
+    pop %ecx 
+    pop %eax 
+    jmp readNext
+
+    close:
+    mov ptrDirEnt,%ebx
+    push %ebx 
+    call closedir
+    add $4,%esp
+
+
     mov $nrOperatii,%eax            #input cate operatii
     push %eax
     push $scanFormat
@@ -99,6 +184,8 @@ _add:
                 #impartire rotunjita superior in bytes, pentur a vedea cate blocuri ocupa in array
 
                 mov dimensiuneFisier,%eax
+                
+                addFisier:
                 mov $8,%ebx
                 mov %ebx,%ecx
                 dec %ecx
@@ -126,6 +213,9 @@ _add:
                 call placeBlocks
                 add $12,%esp
                 
+                mov nrOperatii,%ecx
+                cmp $0,%ecx
+                je backFisiere
         else:
         pop %ecx
         inc %ecx
