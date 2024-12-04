@@ -427,10 +427,6 @@ del:
         call strcat
         add $8,%esp
 
-        push $fullPath
-        push $printFormatt 
-        call printf 
-        add $8,%esp
 
         mov $10,%eax    #unlink code
         mov $fullPath,%ebx
