@@ -12,15 +12,18 @@
     nrOperatii: .long 0
     nrFisiere: .space 4
     dimensiuneFisier: .space 4
-    idFisier: .space 1
+    idFisier: .space 4
+    idFisierr: .space 4 # pt concat adreselor
     opInvalid: .asciz "Operatie invalida, restartati programul\n"
     printFormat_invalid: .asciz "%s"
     lenArray: .long 0 
     inceputInt: .long 1
     capatInt: .long 0
     basePath: .asciz "/home/ninel/facultate/asc/proiectFiles"
-    adresa: .asciz "/home/ninel/facultate/asc/proiectFiles/1"
-    fullPath: .space 30
+    adresa: .asciz "/home/ninel/facultate/asc/proiectFiles/"
+    fullPath: .space 256
+    element: .ascii "\0"
+    convertNumber_buffer: .space 5
     fileName: .space 2
     dot: .asciz "."
     dotdot: .asciz ".."
@@ -53,7 +56,8 @@ main:
     pop %ecx 
   
     lea 11(%eax),%ebx
-    
+    mov %ebx,idFisierr
+
     cmpb $'.',(%ebx) 
     je readNext
     inc %ebx
@@ -64,28 +68,47 @@ main:
     xor %eax,%eax
     xor %ecx,%ecx 
     xor %edx,%edx 
-    convert:
-        movb (%ebx,%ecx),%al 
-        cmp $0,%al 
-        je done 
-        sub $'0',%al 
-        jl readNext
-        cmp $9,%al 
-        jg readNext
-        imul $10,%edx
-        add %eax,%edx
-        inc %ecx
-        jmp convert
-    done:
-    mov %edx,idFisier 
-             
+            convert:
+                movb (%ebx,%ecx),%al 
+                cmp $0,%al 
+                je done 
+                sub $'0',%al 
+                jl readNext
+                cmp $9,%al 
+                jg readNext
+                imul $10,%edx
+                add %eax,%edx
+                inc %ecx
+                jmp convert
+            done:
+    mov %edx,idFisier
+     
+    
+        
     push %ecx 
 
-    push $statBuffer
     push $adresa
+    push $fullPath
+    call strcpy
+    add $8,%esp        
+
+    push $element
+    push $idFisierr
+    call strcat
+    add $8,%esp        
+     
+    push idFisierr
+    push $fullPath
+    call strcat
+    add $8,%esp
+    
+
+    push $statBuffer
+    push $fullPath
     call stat 
     add $8,%esp 
-    
+
+
     pop %ecx #fileName addrses
 
     mov $statBuffer,%eax #filesize
@@ -105,7 +128,7 @@ main:
     mov ptrDirEnt,%ebx
     push %ebx 
     call closedir
-    add $4,%esp
+    add $4,%esp                                         
 
 
     mov $nrOperatii,%eax            #input cate operatii
@@ -370,10 +393,50 @@ get_print:
 
 del:
      mov $idFisier,%eax
-       push %eax
-       push $scanFormat
-       call scanf 
-       add $8,%esp
+        push %eax
+        push $scanFormat
+        call scanf 
+        add $8,%esp
+
+        mov idFisier,%eax
+        lea convertNumber_buffer,%ecx
+        convertLoop:
+                xor %edx,%edx
+                mov $10,%ebx
+                div %ebx 
+                addb $'0',%dl 
+                dec %ecx 
+                movb %dl,(%ecx)
+                cmp $0,%eax 
+                jne convertLoop
+
+        mov %ecx,idFisierr #idFisier doar ca string
+        
+        push $adresa
+        push $fullPath
+        call strcpy
+        add $8,%esp
+
+        push $element
+        push $idFisierr 
+        call strcat
+        add $8,%esp
+                
+        push idFisierr
+        push $fullPath
+        call strcat
+        add $8,%esp
+
+        push $fullPath
+        push $printFormatt 
+        call printf 
+        add $8,%esp
+
+        mov $10,%eax    #unlink code
+        mov $fullPath,%ebx
+        int $0x80
+
+
 
        xor %ecx,%ecx
         
