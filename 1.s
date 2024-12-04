@@ -34,7 +34,7 @@
 main:
     xor %ecx,%ecx 
 
-    lea blocuri,%edi                #incarcam adresa blocurilor in edi pentru a le prelucra
+    lea blocuri,%edi                
     
     lea basePath,%ebx
     push %ebx
@@ -131,7 +131,7 @@ main:
     add $4,%esp                                         
 
 
-    mov $nrOperatii,%eax            #input cate operatii
+    mov $nrOperatii,%eax            
     push %eax
     push $scanFormat
     call scanf
@@ -188,7 +188,7 @@ _add:
     loop_add:
         
         cmp nrFisiere,%ecx 
-        jge parcurgereVector # afisare_add
+        jge parcurgereVector 
         
         push %ecx
 

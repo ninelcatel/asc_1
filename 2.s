@@ -1,8 +1,6 @@
 .section .note.GNU-stack,"",@progbits
 #gcc -m32 2.s -o 2 -no-pie 
 #^ compilare
-#daca adaugam secvential din ceva motiv se duce la coloana 255
-#interesant ca daca inseram un fisier care nu incape pe coloana 255 il baga la 1 cum ar trb normal,poate ceva de print? 
 .data
     contor: .long 0
     blocuri: .space 1048576 #2^20 bytes (1024x1024 bytes)
@@ -14,7 +12,7 @@
     nrOperatii: .space 4
     nrFisiere: .space 4
     dimensiuneFisier: .space 4
-    idFisier: .long 0
+    idFisier: .space 4
     opInvalid: .asciz "Operatie invalida, restartati programul\n"
     printFormat_invalid: .asciz "%s"
     lenArray: .space 1024 #numarul de elemente pe fiecare rand 
@@ -23,11 +21,17 @@
     lenArrayCurrent: .long 0
     linieArray: .long 0
     contorCheck: .long 0
+    basePath: .asciz "/home/ninel/facultate/asc/proiectFiles/"
+    adresa: .asciz "/home/ninel/facultate/asc/proiectFiles/"
+    fullPath: .space 256
+    element: .ascii "\0"
+    convertNumber_buffer: .space 5
+    idFisierr: .space 4
+    statBuffer: .space 96
+    ptrDirEnt: .long 0
 .text
 .global main
 main:
-    
-    
     lea blocuri, %edi 
     lea lenArray, %esi
 
@@ -41,6 +45,101 @@ main:
         inc %ecx
         jmp loop_nullArray
     gata:
+    lea basePath,%ebx
+    push %ebx
+    call opendir
+    add $4,%esp
+    cmp $0,%eax
+    je exit
+    mov %eax,ptrDirEnt
+
+
+    readNext:
+    push %ecx 
+    mov ptrDirEnt,%ebx 
+    push %ebx
+    call readdir
+    add $4,%esp
+    cmp $0,%eax
+    je close
+    pop %ecx 
+  
+    lea 11(%eax),%ebx
+    mov %ebx,idFisierr
+
+    cmpb $'.',(%ebx) 
+    je readNext
+    inc %ebx
+    cmpb $'.',(%ebx)
+    je readNext
+    dec %ebx
+    
+    xor %eax,%eax
+    xor %ecx,%ecx 
+    xor %edx,%edx 
+            convert:
+                movb (%ebx,%ecx),%al 
+                cmp $0,%al 
+                je done 
+                sub $'0',%al 
+                jl readNext
+                cmp $9,%al 
+                jg readNext
+                imul $10,%edx
+                add %eax,%edx
+                inc %ecx
+                jmp convert
+            done:
+    mov %edx,idFisier
+     
+    
+        
+    push %ecx 
+
+    push $adresa
+    push $fullPath
+    call strcpy
+    add $8,%esp        
+
+    push $element
+    push $idFisierr
+    call strcat
+    add $8,%esp        
+     
+    push idFisierr
+    push $fullPath
+    call strcat
+    add $8,%esp
+    
+
+    push $statBuffer
+    push $fullPath
+    call stat 
+    add $8,%esp 
+
+
+    pop %ecx #fileName addrses
+
+    mov $statBuffer,%eax #filesize
+    mov 20(%eax),%edx # struct address in st_id
+    mov 44(%eax),%eax # struct addres in st_size
+    mov %eax,dimensiuneFisier
+    push %eax
+    push %ecx
+    jmp addFisier
+    
+    backFisiere:
+    pop %ecx 
+    pop %eax 
+    jmp readNext
+
+    close:
+    mov ptrDirEnt,%ebx
+    push %ebx 
+    call closedir
+    add $4,%esp
+    
+    
 
 
     mov $nrOperatii,%eax            #input cate operatii
@@ -124,6 +223,8 @@ _add:
 
                 #impartire rotunjita superior in bytes, pentur a vedea cate blocuri ocupa in array
 
+                addFisier:
+
                 mov dimensiuneFisier,%eax
                 mov $8,%ebx
                 mov %ebx,%ecx
@@ -163,6 +264,9 @@ _add:
                 push %ebx # reprezinta lungimea curenta a rowului
                 call placeBlocks
                 add $12,%esp
+                mov nrOperatii,%ecx
+                cmp $0,%ecx
+                je backFisiere
             else:    
         pop %ecx
         inc %ecx
@@ -204,9 +308,9 @@ existSecv:
         mov $256,%edx
         imul %ebx,%edx
         add %ecx,%edx
-        push %ebx #1
-        push %eax #3
-        push %edx #259
+        push %ebx 
+        push %eax 
+        push %edx 
         call placeBlocks_secv2
         add $12,%esp
         pop %eax
@@ -238,7 +342,7 @@ incCheck:
     pop %edx
     
     inc %ebx
-    cmp $2,%ebx
+    cmp $256,%ebx
     jge continue
     push %edx
     mov (%esi,%ebx,4),%edx
@@ -303,7 +407,7 @@ placeBlocks: #functioneaza corect
     ret
 
 
-parcurgereVector:   # din ceva motiv incrementeaza lenArray dupa fiecare afisare(cred , nu neapart) si nu iese ce trb ,ori incrementareLenArray e problema ori afisare
+parcurgereVector:   
     xor %ecx,%ecx
     xor %ebx,%ebx
     xor %edx,%edx
@@ -328,7 +432,7 @@ parcurgereVector:   # din ceva motiv incrementeaza lenArray dupa fiecare afisare
         jne afisare         
 
         cmp lenArrayCurrent,%ecx  # trebuie parcursa toata matricea ca sa putem arata fisierele inainte de defragmentare
-        jge incrementareLenArray  #cel mai probabil chestia asta nu e ok, incrementareLenArray specifci
+        jge incrementareLenArray  
         
         mov %ecx,capatInt   #trebuie dat move inainte de incrementare ca sa nu creasca din greseala cu 1 interavlul
         inc %ecx
@@ -339,7 +443,7 @@ parcurgereVector:   # din ceva motiv incrementeaza lenArray dupa fiecare afisare
 
 incrementareLenArray:
     inc %ebx        #%ebx reprezinta contor pentru linia matricei, cat sipentru lenArray 
-    cmp $2,%ebx   # daca a ajuns la sfarsitul matricei ne intoarcem
+    cmp $256,%ebx   # daca a ajuns la sfarsitul matricei ne intoarcem
     jge back
     mov %ebx,linieArray
     push %edx
@@ -487,12 +591,46 @@ del:
        call scanf 
        add $8,%esp
 
+        mov idFisier,%eax
+        lea convertNumber_buffer,%ecx
+        convertLoop:
+                xor %edx,%edx
+                mov $10,%ebx
+                div %ebx 
+                addb $'0',%dl 
+                dec %ecx 
+                movb %dl,(%ecx)
+                cmp $0,%eax 
+                jne convertLoop
+
+        mov %ecx,idFisierr #idFisier doar ca string
+        
+        push $adresa
+        push $fullPath
+        call strcpy
+        add $8,%esp
+
+        push $element
+        push $idFisierr 
+        call strcat
+        add $8,%esp
+                
+        push idFisierr
+        push $fullPath
+        call strcat
+        add $8,%esp
+
+
+        mov $10,%eax    #unlink code
+        mov $fullPath,%ebx
+        int $0x80
+
        xor %ecx,%ecx
         mov (%esi,%ecx,4),%ebx
         mov %ebx,lenArrayCurrent
         xor %ebx,%ebx
         xor %edx,%edx
-
+    
         loop_gasimFisier:
             cmp lenArrayCurrent,%ecx
             jge incLen_arrayDel
@@ -525,7 +663,7 @@ incLen_arrayDel:
     xor %ecx,%ecx
     
     jmp loop_gasimFisier
-validArray:                 #validam daca mai exista 0 intre blocuri, daca exista, facem o shiftare la stanga cu 1 element  #trb facut pt matrix
+validArray:                 #validam daca mai exista 0 intre blocuri, daca exista, facem o shiftare la stanga cu 1 element  
     xor %ecx,%ecx
     mov (%esi,%ecx,4),%ebx
     mov %ebx,lenArrayCurrent
@@ -534,7 +672,7 @@ validArray:                 #validam daca mai exista 0 intre blocuri, daca exist
 
     loop_validArray:
         cmp %ecx,lenArrayCurrent
-        je incLen_arrayDef #parcurgereVector
+        je incLen_arrayDef 
         mov (%edi,%edx,4),%eax
         cmp $0,%eax
         je defrag
